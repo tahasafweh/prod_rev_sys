@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تفاصيل المنتج</title>
+    <!-- Bootstrap RTL CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'products/css/styles.css' %}">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'product-list' %}">نظام مراجعات المنتجات</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'product-list' %}">المنتجات</a>
+                    </li>
+                </ul>
+                <div class="d-flex">
+                    <div class="auth-logout-required">
+                        <a href="{% url 'login' %}" class="btn btn-outline-light">تسجيل الدخول</a>
+                    </div>
+                    <div class="auth-login-required" style="display: none;">
+                        <div class="dropdown">
+                            <button class="btn btn-outline-light dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-user"></i> <span class="auth-username">المستخدم</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                <li><a class="dropdown-item" href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+        <div class="row">
+            <!-- Product Details Section -->
+            <div class="col-md-4 mb-4">
+                <div class="card product-card shadow">
+                    <div class="product-image-container">
+                        <img src="{% static 'products/img/placeholder.jpg' %}" class="card-img-top" alt="{{ product.name }}" id="product-image">
+                    </div>
+                    <div class="card-body">
+                        <h2 class="card-title" id="product-name">اسم المنتج</h2>
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="product-rating me-2">
+                                <span id="product-rating">0</span>/5
+                            </div>
+                            <div class="stars-container" id="product-stars">
+                                <i class="far fa-star"></i>
+                                <i class="far fa-star"></i>
+                                <i class="far fa-star"></i>
+                                <i class="far fa-star"></i>
+                                <i class="far fa-star"></i>
+                            </div>
+                        </div>
+                        <p class="text-muted" id="reviews-count">0 مراجعات</p>
+                        <p class="card-text" id="product-description">وصف المنتج سيظهر هنا...</p>
+                        <p class="product-price" id="product-price">0 ريال</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reviews Section -->
+            <div class="col-md-8">
+                <div class="card shadow mb-4">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h3 class="mb-0">المراجعات</h3>
+                        <button class="btn btn-light" id="add-review-btn" data-bs-toggle="modal" data-bs-target="#reviewModal">
+                            <i class="fas fa-plus"></i> إضافة مراجعة
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <!-- Filters -->
+                        <div class="filters-container mb-4">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label for="rating-filter" class="form-label">تصفية حسب التقييم:</label>
+                                    <select class="form-select" id="rating-filter">
+                                        <option value="all">الكل</option>
+                                        <option value="5">5 نجوم</option>
+                                        <option value="4">4 نجوم</option>
+                                        <option value="3">3 نجوم</option>
+                                        <option value="2">2 نجوم</option>
+                                        <option value="1">1 نجمة</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="sort-by" class="form-label">ترتيب حسب:</label>
+                                    <select class="form-select" id="sort-by">
+                                        <option value="-created_at">الأحدث</option>
+                                        <option value="created_at">الأقدم</option>
+                                        <option value="-rating">الأعلى تقييمًا</option>
+                                        <option value="rating">الأقل تقييمًا</option>
+                                        <option value="most_interactions">الأكثر تفاعلًا</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Reviews List -->
+                        <div id="reviews-list" class="reviews-container">
+                            <!-- Reviews will be loaded here dynamically -->
+                            <div class="text-center py-5" id="loading-indicator">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">جاري التحميل...</span>
+                                </div>
+                                <p class="mt-2">جاري تحميل المراجعات...</p>
+                            </div>
+                            <div class="text-center py-5 d-none" id="no-reviews">
+                                <i class="fas fa-comment-slash fa-3x text-muted mb-3"></i>
+                                <p>لا توجد مراجعات بعد. كن أول من يضيف مراجعة!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Review Modal -->
+    <div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="reviewModalLabel">إضافة مراجعة</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="auth-logout-required">
+                        <div class="alert alert-warning">
+                            يجب تسجيل الدخول لإضافة مراجعة. <a href="/login/" class="alert-link">تسجيل الدخول</a>
+                        </div>
+                    </div>
+                    <form id="review-form" class="auth-login-required">
+                        <div class="mb-3">
+                            <label class="form-label">التقييم:</label>
+                            <div class="rating-input">
+                                <i class="far fa-star rating-star" data-rating="1"></i>
+                                <i class="far fa-star rating-star" data-rating="2"></i>
+                                <i class="far fa-star rating-star" data-rating="3"></i>
+                                <i class="far fa-star rating-star" data-rating="4"></i>
+                                <i class="far fa-star rating-star" data-rating="5"></i>
+                                <input type="hidden" id="rating-value" name="rating" value="0">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="review-text" class="form-label">نص المراجعة:</label>
+                            <textarea class="form-control" id="review-text" name="review_text" rows="4" required></textarea>
+                        </div>
+                        <div class="alert alert-info">
+                            <small>ملاحظة: سيتم مراجعة تعليقك قبل نشره.</small>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="button" class="btn btn-primary auth-login-required" id="submit-review">إرسال</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Review Template (hidden) -->
+    <template id="review-template">
+        <div class="review-card mb-3">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <img src="{% static 'products/img/user-avatar.png' %}" alt="User" class="review-avatar me-2">
+                        <div>
+                            <h5 class="review-username mb-0"></h5>
+                            <div class="review-stars"></div>
+                        </div>
+                    </div>
+                    <small class="text-muted review-date"></small>
+                </div>
+                <div class="card-body">
+                    <p class="review-text"></p>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div class="interaction-buttons">
+                            <button class="btn btn-sm btn-outline-primary like-button auth-login-required">
+                                <i class="far fa-thumbs-up"></i> <span class="likes-count">0</span>
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary dislike-button ms-2 auth-login-required">
+                                <i class="far fa-thumbs-down"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger report-button ms-2 auth-login-required">
+                                <i class="far fa-flag"></i> إبلاغ
+                            </button>
+                        </div>
+                        <div class="views-counter">
+                            <i class="far fa-eye"></i> <span class="views-count">0</span> مشاهدة
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Axios for API calls -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{% static 'products/js/auth.js' %}"></script>
+    <script src="{% static 'products/js/product-detail.js' %}"></script>
+</body>
+</html> 

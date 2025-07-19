@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل الدخول</title>
+    <!-- Bootstrap RTL CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'products/css/styles.css' %}">
+</head>
+<body>
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white text-center">
+                        <h3>تسجيل الدخول</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-danger d-none" id="login-error">
+                            خطأ في اسم المستخدم أو كلمة المرور
+                        </div>
+                        
+                        <form id="login-form">
+                            <div class="mb-3">
+                                <label for="username" class="form-label">اسم المستخدم</label>
+                                <input type="text" class="form-control" id="username" name="username" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="password" class="form-label">كلمة المرور</label>
+                                <input type="password" class="form-control" id="password" name="password" required>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary">تسجيل الدخول</button>
+                            </div>
+                        </form>
+                        
+                        <hr>
+                        
+                        <div class="text-center">
+                            <p>ليس لديك حساب؟ <a href="#" id="register-link">سجل الآن</a></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Registration Modal -->
+    <div class="modal fade" id="registerModal" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="registerModalLabel">إنشاء حساب جديد</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger d-none" id="register-error">
+                        حدث خطأ أثناء التسجيل
+                    </div>
+                    
+                    <form id="register-form">
+                        <div class="mb-3">
+                            <label for="reg-username" class="form-label">اسم المستخدم</label>
+                            <input type="text" class="form-control" id="reg-username" name="username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="reg-email" class="form-label">البريد الإلكتروني</label>
+                            <input type="email" class="form-control" id="reg-email" name="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="reg-password" class="form-label">كلمة المرور</label>
+                            <input type="password" class="form-control" id="reg-password" name="password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="reg-confirm-password" class="form-label">تأكيد كلمة المرور</label>
+                            <input type="password" class="form-control" id="reg-confirm-password" name="confirm_password" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="button" class="btn btn-primary" id="register-submit">تسجيل</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Axios for API calls -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{% static 'products/js/auth.js' %}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Login form submission
+            document.getElementById('login-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                const errorElement = document.getElementById('login-error');
+                
+                try {
+                    const response = await axios.post('/api/token/', {
+                        username,
+                        password
+                    });
+                    
+                    // Store tokens and user data
+                    Auth.setAuthData(
+                        response.data.access,
+                        response.data.refresh,
+                        { username }
+                    );
+                    
+                    // Redirect to home page
+                    window.location.href = '/';
+                    
+                } catch (error) {
+                    console.error('Login error:', error);
+                    errorElement.classList.remove('d-none');
+                }
+            });
+            
+            // Show registration modal
+            document.getElementById('register-link').addEventListener('click', (e) => {
+                e.preventDefault();
+                const registerModal = new bootstrap.Modal(document.getElementById('registerModal'));
+                registerModal.show();
+            });
+            
+            // Registration form submission
+            document.getElementById('register-submit').addEventListener('click', async () => {
+                const username = document.getElementById('reg-username').value;
+                const email = document.getElementById('reg-email').value;
+                const password = document.getElementById('reg-password').value;
+                const confirmPassword = document.getElementById('reg-confirm-password').value;
+                const errorElement = document.getElementById('register-error');
+                
+                // Validate passwords match
+                if (password !== confirmPassword) {
+                    errorElement.textContent = 'كلمات المرور غير متطابقة';
+                    errorElement.classList.remove('d-none');
+                    return;
+                }
+                
+                try {
+                    const response = await axios.post('/api/register/', {
+                        username,
+                        email,
+                        password
+                    });
+                    
+                    // Store tokens and user data
+                    Auth.setAuthData(
+                        response.data.access,
+                        response.data.refresh,
+                        response.data.user
+                    );
+                    
+                    // Close modal and redirect
+                    const registerModal = bootstrap.Modal.getInstance(document.getElementById('registerModal'));
+                    registerModal.hide();
+                    
+                    // Show success message and redirect
+                    showAuthAlert('تم إنشاء الحساب بنجاح!', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1500);
+                    
+                } catch (error) {
+                    console.error('Registration error:', error);
+                    errorElement.textContent = error.response?.data?.error || 'حدث خطأ أثناء التسجيل';
+                    errorElement.classList.remove('d-none');
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

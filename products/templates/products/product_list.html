@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>قائمة المنتجات</title>
+    <!-- Bootstrap RTL CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'products/css/styles.css' %}">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'product-list' %}">نظام مراجعات المنتجات</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="{% url 'product-list' %}">المنتجات</a>
+                    </li>
+                </ul>
+                <div class="d-flex">
+                    <div class="auth-logout-required">
+                        <a href="{% url 'login' %}" class="btn btn-outline-light">تسجيل الدخول</a>
+                    </div>
+                    <div class="auth-login-required" style="display: none;">
+                        <div class="dropdown">
+                            <button class="btn btn-outline-light dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-user"></i> <span class="auth-username">المستخدم</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                <li><a class="dropdown-item" href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container py-5">
+        <div class="row">
+            <div class="col-12 mb-4">
+                <h1 class="mb-4">قائمة المنتجات</h1>
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" placeholder="ابحث عن منتج..." id="search-input">
+                    <button class="btn btn-outline-primary" type="button" id="search-button">
+                        <i class="fas fa-search"></i> بحث
+                    </button>
+                </div>
+                
+                <!-- Filters and Sorting -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">أدوات التحكم</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <!-- Star Rating Filter -->
+                            <div class="col-md-6 mb-3">
+                                <label for="rating-filter" class="form-label">تصفية حسب التقييم:</label>
+                                <select class="form-select" id="rating-filter">
+                                    <option value="all" selected>جميع التقييمات</option>
+                                    <option value="5">5 نجوم</option>
+                                    <option value="4">4 نجوم أو أعلى</option>
+                                    <option value="3">3 نجوم أو أعلى</option>
+                                    <option value="2">2 نجوم أو أعلى</option>
+                                    <option value="1">1 نجمة أو أعلى</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Sorting Options -->
+                            <div class="col-md-6 mb-3">
+                                <label for="sort-by" class="form-label">ترتيب حسب:</label>
+                                <select class="form-select" id="sort-by">
+                                    <option value="newest">الأحدث</option>
+                                    <option value="highest_rated">الأعلى تقييمًا</option>
+                                    <option value="most_reviews">الأكثر مراجعات</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row" id="products-container">
+            <!-- Products will be loaded here -->
+            <div class="text-center py-5" id="loading-indicator">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">جاري التحميل...</span>
+                </div>
+                <p class="mt-2">جاري تحميل المنتجات...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Card Template -->
+    <template id="product-card-template">
+        <div class="col-md-4 mb-4">
+            <div class="card product-card shadow h-100">
+                <div class="product-image-container">
+                    <img src="{% static 'products/img/placeholder.jpg' %}" class="card-img-top product-image" alt="Product Image">
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title product-name">اسم المنتج</h5>
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="product-stars me-2"></div>
+                        <small class="text-muted reviews-count">(0 مراجعات)</small>
+                    </div>
+                    <p class="card-text product-description flex-grow-1">وصف المنتج</p>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div class="product-price">0 ريال</div>
+                        <a href="#" class="btn btn-primary view-reviews-btn">عرض المراجعات</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Axios for API calls -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{% static 'products/js/auth.js' %}"></script>
+    <script>
+        // Generate star HTML based on rating
+        const generateStarsHtml = (rating) => {
+            let starsHtml = '';
+            for (let i = 1; i <= 5; i++) {
+                if (i <= rating) {
+                    starsHtml += '<i class="fas fa-star text-warning"></i>';
+                } else {
+                    starsHtml += '<i class="far fa-star text-warning"></i>';
+                }
+            }
+            return starsHtml;
+        };
+
+        // Load products from API
+        const loadProducts = async (searchQuery = '', ratingFilter = 'all', sortBy = 'newest') => {
+            const productsContainer = document.getElementById('products-container');
+            const loadingIndicator = document.getElementById('loading-indicator');
+            
+            try {
+                // Show loading indicator
+                loadingIndicator.classList.remove('d-none');
+                
+                // Build query parameters
+                let url = '/api/products/';
+                let hasParams = false;
+                
+                if (searchQuery) {
+                    url += `?search=${encodeURIComponent(searchQuery)}`;
+                    hasParams = true;
+                }
+                
+                if (ratingFilter !== 'all') {
+                    url += hasParams ? `&rating=${ratingFilter}` : `?rating=${ratingFilter}`;
+                    hasParams = true;
+                }
+                
+                if (sortBy) {
+                    url += hasParams ? `&sort=${sortBy}` : `?sort=${sortBy}`;
+                }
+                
+                // Debug: Log the constructed URL
+                console.log('API URL:', url);
+                
+                // Fetch products
+                const response = await axios.get(url);
+                const products = response.data;
+                
+                // Debug: Log the API response
+                console.log('API Response:', products);
+                
+                // Hide loading indicator
+                loadingIndicator.classList.add('d-none');
+                
+                // Clear existing products
+                while (productsContainer.querySelector('.col-md-4')) {
+                    productsContainer.querySelector('.col-md-4').remove();
+                }
+                
+                // Show no products message if no products
+                if (!products.length) {
+                    const noProductsDiv = document.createElement('div');
+                    noProductsDiv.className = 'col-12 text-center py-5';
+                    noProductsDiv.innerHTML = `
+                        <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                        <p>لا توجد منتجات متاحة${searchQuery ? ' تطابق بحثك' : ''}.</p>
+                    `;
+                    productsContainer.appendChild(noProductsDiv);
+                    return;
+                }
+                
+                // Render each product
+                products.forEach(product => {
+                    const productElement = createProductElement(product);
+                    productsContainer.appendChild(productElement);
+                });
+                
+            } catch (error) {
+                console.error('Error loading products:', error);
+                console.error('Error details:', error.response ? error.response.data : 'No response data');
+                loadingIndicator.classList.add('d-none');
+                
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'col-12 text-center py-5';
+                errorDiv.innerHTML = `
+                    <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
+                    <p>حدث خطأ أثناء تحميل المنتجات. الرجاء المحاولة مرة أخرى.</p>
+                `;
+                productsContainer.appendChild(errorDiv);
+            }
+        };
+
+        // Create a product element from template
+        const createProductElement = (product) => {
+            // Clone the template
+            const template = document.getElementById('product-card-template');
+            const productElement = document.importNode(template.content, true).querySelector('.col-md-4');
+            
+            // Set product data
+            productElement.querySelector('.product-name').textContent = product.name;
+            productElement.querySelector('.product-description').textContent = product.description.length > 100 ? 
+                product.description.substring(0, 100) + '...' : product.description;
+            
+            if (product.price) {
+                productElement.querySelector('.product-price').textContent = `${product.price} ريال`;
+            }
+            
+            // Set product image if available
+            if (product.image) {
+                productElement.querySelector('.product-image').src = product.image;
+            }
+            
+            // Set reviews link
+            const reviewsLink = productElement.querySelector('.view-reviews-btn');
+            reviewsLink.href = `/products/${product.id}/reviews-page/`;
+            
+            // Load product ratings
+            loadProductRating(product.id, productElement);
+            
+            return productElement;
+        };
+
+        // Load product rating
+        const loadProductRating = async (productId, productElement) => {
+            try {
+                const response = await axios.get(`/api/products/${productId}/ratings/`);
+                const ratingInfo = response.data;
+                
+                // Update stars
+                const starsContainer = productElement.querySelector('.product-stars');
+                starsContainer.innerHTML = generateStarsHtml(Math.round(ratingInfo.average_rating));
+                
+                // Update reviews count
+                productElement.querySelector('.reviews-count').textContent = 
+                    `(${ratingInfo.approved_reviews} مراجعة)`;
+                
+            } catch (error) {
+                console.error(`Error loading ratings for product ${productId}:`, error);
+                // Set default values on error
+                productElement.querySelector('.product-stars').innerHTML = generateStarsHtml(0);
+                productElement.querySelector('.reviews-count').textContent = '(0 مراجعات)';
+            }
+        };
+
+        // Handle search
+        const handleSearch = () => {
+            const searchInput = document.getElementById('search-input');
+            const searchValue = searchInput.value.trim();
+            const ratingFilter = document.getElementById('rating-filter').value;
+            const sortBy = document.getElementById('sort-by').value;
+            console.log('Searching for:', searchValue, 'Rating:', ratingFilter, 'Sort:', sortBy);
+            loadProducts(searchValue, ratingFilter, sortBy);
+        };
+
+        // Handle logout
+        const handleLogout = async () => {
+            try {
+                const refreshToken = Auth.getRefreshToken();
+                if (refreshToken) {
+                    await axios.post('/api/logout/', { refresh: refreshToken });
+                }
+                Auth.clearAuthData();
+                window.location.reload();
+            } catch (error) {
+                console.error('Logout error:', error);
+                Auth.clearAuthData();
+                window.location.reload();
+            }
+        };
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load products
+            loadProducts();
+            
+            // Setup search
+            document.getElementById('search-button').addEventListener('click', handleSearch);
+            document.getElementById('search-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    handleSearch();
+                }
+            });
+
+            // Setup filters and sorting
+            document.getElementById('rating-filter').addEventListener('change', handleSearch);
+            document.getElementById('sort-by').addEventListener('change', handleSearch);
+            
+            // Setup logout
+            document.getElementById('logout-btn').addEventListener('click', (e) => {
+                e.preventDefault();
+                handleLogout();
+            });
+        });
+    </script>
+</body>
+</html> 
