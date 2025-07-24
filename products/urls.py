@@ -3,6 +3,8 @@ from rest_framework.routers import DefaultRouter
 from .views import ProductViewSet, RegisterView, LogoutView, ReviewListCreateView, ReviewDetailView, ApproveReviewView, ProductRatingInfoView, ReviewInteractionViewSet, ProductTopReviewView, AdminReportView, AdminReviewActionView, AdminDashboardView, NotificationListView, ReviewCommentViewSet, AddCommentToReview
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from products.views import ProductAnalyticsView, TopRatedProductsView, TopReviewersView, KeywordSearchView, ExportAllReviewsAnalyticsToCSV, AllProductsAnalyticsView, ExportReviewsToExcel, NotificationListView
+from .views import notifications_page 
+from .views import NotificationReadView
 
 router = DefaultRouter()
 router.register('products', ProductViewSet, basename='product')
@@ -36,6 +38,10 @@ urlpatterns = [
     path('analytics/export-reviews/', ExportAllReviewsAnalyticsToCSV.as_view(), name='export_reviews_csv'),
     path('analytics/export-reviews-excel/', ExportReviewsToExcel.as_view(), name='export_reviews_excel'),
 
+    path("notifications/", notifications_page, name="notifications-page"),
+    path('products/notifications/', NotificationListView.as_view(), name='notifications'),
+
+    
     # ✅ الرابط المضاف للإحصائيات
     path('review-interactions/<int:review_id>/stats/', review_interaction_stats, name='review-interaction-stats'),
 

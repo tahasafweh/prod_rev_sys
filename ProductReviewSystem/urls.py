@@ -21,4 +21,13 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('products.urls')),  # API endpoints under /api/
     path('', include('products.frontend_urls')),  # Frontend URLs at root level
+
 ]
+
+##for displaying images :
+from django.conf import settings
+from django.conf.urls.static import static
+
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

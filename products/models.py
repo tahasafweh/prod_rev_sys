@@ -10,7 +10,8 @@ class Product(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-
+    image = models.ImageField(upload_to='product_images/', null=True, blank=True)
+    
     def __str__(self):
         return self.name
 
@@ -57,7 +58,7 @@ class ReviewInteraction(models.Model):
 class Notification(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notifications")
     message = models.TextField()
-    related_review = models.ForeignKey('Review', on_delete=models.CASCADE, null=True, blank=True, related_name="notifications")  # حقل اختياري
+    related_review = models.ForeignKey(Review, on_delete=models.CASCADE, null=True, blank=True)  # حقل اختياري
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -86,3 +87,11 @@ class AdminReport(models.Model):
 
     def __str__(self):
         return f"Report for review {self.review.id} - Status: {self.status}"
+
+
+class Notification1(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notifications1")
+    message = models.TextField()
+    related_review = models.ForeignKey(Review, on_delete=models.CASCADE, null=True, blank=True)  # حقل اختياري
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)

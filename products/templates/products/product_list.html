@@ -12,37 +12,50 @@
     <link rel="stylesheet" href="{% static 'products/css/styles.css' %}">
 </head>
 <body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="{% url 'product-list' %}">نظام مراجعات المنتجات</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="{% url 'product-list' %}">المنتجات</a>
-                    </li>
-                </ul>
-                <div class="d-flex">
-                    <div class="auth-logout-required">
-                        <a href="{% url 'login' %}" class="btn btn-outline-light">تسجيل الدخول</a>
-                    </div>
-                    <div class="auth-login-required" style="display: none;">
-                        <div class="dropdown">
-                            <button class="btn btn-outline-light dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-user"></i> <span class="auth-username">المستخدم</span>
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                                <li><a class="dropdown-item" href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</a></li>
-                            </ul>
-                        </div>
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" href="{% url 'product-list' %}">نظام مراجعات المنتجات</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'product-list' %}">المنتجات</a>
+                </li>
+            </ul>
+
+            <div class="d-flex align-items-center">
+                <!-- زر الإشعارات - يظهر فقط عند تسجيل الدخول -->
+                <div class="auth-login-required me-2" style="display: none;">
+                    <a href="/notifications/" class="btn btn-outline-light">الإشعارات</a>
+                </div>
+
+                <!-- زر تسجيل الدخول -->
+                <div class="auth-logout-required">
+                    <a href="{% url 'login' %}" class="btn btn-outline-light">تسجيل الدخول</a>
+                </div>
+
+                <!-- قائمة المستخدم عند تسجيل الدخول -->
+                <div class="auth-login-required" style="display: none;">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-light dropdown-toggle" type="button" id="userDropdown"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user"></i> <span class="auth-username">المستخدم</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li><a class="dropdown-item" href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</a></li>
+                        </ul>
                     </div>
                 </div>
             </div>
         </div>
-    </nav>
+    </div>
+</nav>
+
 
     <!-- Main Content -->
     <div class="container py-5">
