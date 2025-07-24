@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
-from .models import Product, Review, ReviewInteraction, Notification, AdminReport , ReviewComment
+from .models import Product, Review, ReviewInteraction, Notification1, AdminReport , ReviewComment
 from rest_framework.exceptions import PermissionDenied
 
 
@@ -21,6 +21,7 @@ class UserSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     average_rating = serializers.SerializerMethodField(read_only=True)
     review_count = serializers.SerializerMethodField(read_only=True)
+    image = serializers.ImageField(use_url=True)  
 
     class Meta:
         model = Product
@@ -32,6 +33,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "user",
             "average_rating",
             "review_count",
+            "image",
         ]
         read_only_fields = ["id", "created_at", "user"]
 
@@ -125,8 +127,8 @@ class NotificationSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(read_only=True)
 
     class Meta:
-        model = Notification
-        fields = ["id", "user", "message", "is_read", "created_at"]
+        model = Notification1
+        fields = ["id", "user", "message", "related_review", "is_read", "created_at"]
         read_only_fields = ["id", "user", "created_at"]
 
 

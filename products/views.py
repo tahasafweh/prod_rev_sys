@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.models import User
-from .models import Product, Review, Notification, AdminReport ,ReviewComment
+from .models import Product, Review, Notification1, AdminReport ,ReviewComment
 from .serializers import ProductSerializer, ReviewSerializer, UserSerializer ,ReviewInteraction , ReviewInteractionSerializer ,ReviewCommentSerializer
 from .permissions import IsOwnerOrReadOnly, IsProductOwner
 from django_filters.rest_framework import DjangoFilterBackend
@@ -16,6 +16,9 @@ from datetime import datetime, timedelta
 from django.utils import timezone
 from django.shortcuts import render, get_object_or_404
 from django.views.generic import TemplateView
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
 
 ####################### register ######################
 class RegisterView(APIView):
@@ -443,23 +446,52 @@ class ReviewCommentViewSet(viewsets.ModelViewSet):
 ######################## Notification ########################
 class NotificationListView(APIView):
     permission_classes = [IsAuthenticated]
+
     def get(self, request):
-        notifications = Notification.objects.filter(user=request.user, is_read=False)
+        filter_status = request.GET.get('status', 'all')  # 'all', 'read', 'unread'
+        notifications = Notification1.objects.filter(user=request.user)
+
+        if filter_status == 'read':
+            notifications = notifications.filter(is_read=True)
+        elif filter_status == 'unread':
+            notifications = notifications.filter(is_read=False)
+
         notification_data = [
             {
                 "id": n.id,
                 "message": n.message,
                 "related_review": n.related_review.id if n.related_review else None,
+                "is_read": n.is_read,
                 "created_at": n.created_at,
             }
-            for n in notifications
+            for n in notifications.order_by('-created_at')
         ]
         return Response(notification_data)
+
     def post(self, request):
-        # تحديث حالة الإشعارات إلى مقروءة
-        Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+        # تحديث حالة الإشعارات إلى مقروءة (علامة "تمت قراءة الكل")
+        Notification1.objects.filter(user=request.user, is_read=False).update(is_read=True)
         return Response({"status": "All notifications marked as read."})
     
+
+@login_required
+def notifications_page(request):
+    notifications = Notification1.objects.filter(user=request.user).order_by('-created_at')
+    return render(request, 'products/notifications.html', {'notifications': notifications})
+
+
+class NotificationReadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            notification = Notification1.objects.get(pk=pk, user=request.user)
+            notification.is_read = True
+            notification.save()
+            return Response({"status": "Notification marked as read."})
+        except Notification1.DoesNotExist:
+            return Response({"error": "Notification not found."}, status=status.HTTP_404_NOT_FOUND)
+
 ########################### Admin Insights & Reports System #################################
 class AdminReportView(APIView):  #Admin Insights System - Comprehensive reporting for product reviews
     # Only require authentication for POST requests, admin permissions for GET
@@ -584,7 +616,7 @@ class AdminReviewActionView(APIView):
             if action == 'approve':
                 review.is_visible = True
                 review.save()
-                Notification.objects.create(
+                Notification1.objects.create(
                     user=review.user,
                     message=f"Your review for '{review.product.name}' has been approved and is now visible."
                 )
@@ -601,7 +633,7 @@ class AdminReviewActionView(APIView):
                     status='rejected',
                     user=request.user
                 )
-                Notification.objects.create(
+                Notification1.objects.create(
                     user=review.user,
                     message=f"Your review for '{review.product.name}' has been rejected."
                 )

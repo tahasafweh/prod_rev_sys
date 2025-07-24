@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>الإشعارات</title>
+    <!-- Bootstrap RTL CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" />
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'products/css/styles.css' %}" />
+    <style>
+        /* إضافة لتوسيط الرسالة عند عدم وجود إشعارات */
+        .center-card-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 300px;
+        }
+
+        /* تمييز الإشعارات المقروءة بلون أفتح */
+        .notification-item[data-read="true"] .card {
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'product-list' %}">نظام مراجعات المنتجات</a>
+            <button
+                class="navbar-toggler"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#navbarNav"
+                aria-controls="navbarNav"
+                aria-expanded="false"
+                aria-label="Toggle navigation"
+            >
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'product-list' %}">المنتجات</a>
+                    </li>
+                </ul>
+
+                <div class="d-flex align-items-center">
+                    <!-- زر الإشعارات - يظهر فقط عند تسجيل الدخول -->
+                    <div class="auth-login-required me-2" style="display: none;">
+                        <a href="/notifications/" class="btn btn-outline-light">الإشعارات</a>
+                    </div>
+
+                    <!-- زر تسجيل الدخول -->
+                    <div class="auth-logout-required">
+                        <a href="{% url 'login' %}" class="btn btn-outline-light">تسجيل الدخول</a>
+                    </div>
+
+                    <!-- قائمة المستخدم عند تسجيل الدخول -->
+                    <div class="auth-login-required" style="display: none;">
+                        <div class="dropdown">
+                            <button
+                                class="btn btn-outline-light dropdown-toggle"
+                                type="button"
+                                id="userDropdown"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false"
+                            >
+                                <i class="fas fa-user"></i> <span class="auth-username">المستخدم</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                <li>
+                                    <a class="dropdown-item" href="#" id="logout-btn"
+                                        ><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</a
+                                    >
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- فقط قسم فلترة الحالة (مقروء وغير مقروء) -->
+    <div class="container mt-4">
+        <div class="row mb-3 justify-content-center">
+            <div class="col-md-3">
+                <select id="filter-read-status" class="form-select">
+                    <option value="all">الكل</option>
+                    <option value="unread">غير المقروءة</option>
+                    <option value="read">المقروءة</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- قسم الإشعارات -->
+    <div class="container mt-3">
+        <h2 class="mb-4 text-center">📩 الإشعارات</h2>
+        <div class="row justify-content-center">
+            <div class="col-md-8" id="notification-list">
+                <!-- الإشعارات تظهر هنا -->
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <button onclick="markAsRead()" class="btn btn-success">تمت قراءة الكل</button>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Axios for API calls -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{% static 'products/js/auth.js' %}"></script>
+    <script src="{% static 'products/js/notifications.js' %}"></script>
+<script>
+        // Handle logout
+        const handleLogout = async () => {
+            try {
+                const refreshToken = Auth.getRefreshToken();
+                if (refreshToken) {
+                    await axios.post('/api/logout/', { refresh: refreshToken });
+                }
+                Auth.clearAuthData();
+                window.location.reload();
+            } catch (error) {
+                console.error('Logout error:', error);
+                Auth.clearAuthData();
+                window.location.reload();
+            }
+        };
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load products
+            loadProducts();
+            
+            // Setup search
+            document.getElementById('search-button').addEventListener('click', handleSearch);
+            document.getElementById('search-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    handleSearch();
+                }
+            });
+
+            // Setup filters and sorting
+            document.getElementById('rating-filter').addEventListener('change', handleSearch);
+            document.getElementById('sort-by').addEventListener('change', handleSearch);
+            
+            // Setup logout
+            document.getElementById('logout-btn').addEventListener('click', (e) => {
+                e.preventDefault();
+                handleLogout();
+            });
+        });
+    </script>
+
+</body>
+</html>

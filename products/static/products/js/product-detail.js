@@ -3,6 +3,22 @@
  * Handles loading product details, reviews, and user interactions
  */
 
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+        const cookies = document.cookie.split(";");
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === name + "=") {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+axios.defaults.headers.common["X-CSRFToken"] = getCookie("csrftoken");
 // Get product ID from URL
 const getProductId = () => {
     const pathParts = window.location.pathname.split('/');
@@ -137,7 +153,7 @@ const createReviewElement = (review) => {
     
     // Set review data
     reviewElement.setAttribute('data-review-id', review.id);
-    reviewElement.querySelector('.review-username').textContent = review.user.username;
+    reviewElement.querySelector(".review-username").innerHTML =` ${review.user}`;
     reviewElement.querySelector('.review-stars').innerHTML = generateStarsHtml(review.rating);
     reviewElement.querySelector('.review-date').textContent = formatDate(review.created_at);
     reviewElement.querySelector('.review-text').textContent = review.review_text;
@@ -166,6 +182,7 @@ const createReviewElement = (review) => {
     }
     
     // Add event listeners for interactions
+    
     setupInteractionListeners(reviewElement, review.id);
     
     return reviewElement;
@@ -281,114 +298,108 @@ const handleLikeInteraction = async (reviewId, button) => {
     }
 };
 
-// Handle dislike interaction
-const handleDislikeInteraction = async (reviewId, button) => {
+
+
+
+
+
+
+
+
+
+
+    if (!Auth.isLoggedIn()) 
+  
+// Handle report interaction
+
+// دالة لبناء عرض المراجعة أو تحديث حالة زر الإبلاغ
+function updateReviewReportButton(reviewElement, review) {
+    const reportButton = reviewElement.querySelector(".report-button");
+    if (review.reported) {
+        reportButton.classList.add("active");
+        reportButton.disabled = true;
+        reportButton.innerHTML = '<i class="fas fa-flag"></i> تم الإبلاغ';
+    } else {
+        reportButton.classList.remove("active");
+        reportButton.disabled = false;
+        reportButton.innerHTML = '<i class="far fa-flag"></i> إبلاغ';
+    }
+}
+
+// مثال عند بناء المراجعات (يجب استدعاء updateReviewReportButton لكل مراجعة)
+function renderReview(review) {
+    const reviewElement = document.querySelector(`[data-review-id="${review.id}"]`);
+    if (!reviewElement) return;
+
+    // تحديث زر الإبلاغ حسب حالة البلاغ
+    updateReviewReportButton(reviewElement, review);
+
+    // بقية التحديثات لعرض بيانات المراجعة هنا
+}
+
+
+
+
+const handleReportInteraction = async (reviewId, button) => {
     if (!Auth.isLoggedIn()) {
-        showAuthAlert('يجب تسجيل الدخول للتفاعل مع المراجعات', 'warning');
+        showAuthAlert("يجب تسجيل الدخول للإبلاغ عن المراجعات", "warning");
         return;
     }
-    
-    try {
-        // Store original state
-        const wasActive = button.classList.contains('active');
-        
-        logInteractionState(reviewId, 'Helpful', { wasActive });
-        
-        // Optimistically update UI
-        button.classList.toggle('active');
-        
-        // Update icon
-        const icon = button.querySelector('i');
-        if (button.classList.contains('active')) {
-            icon.classList.remove('far');
-            icon.classList.add('fas');
-        } else {
-            icon.classList.remove('fas');
-            icon.classList.add('far');
-        }
-        
-        // Send request to server
-        const response = await axios.post('/api/review-interactions/', {
-            review: reviewId,
-            is_helpful: true  // Always send true, the backend will handle toggling
-        });
-        
-        // Update UI based on the actual server response
-        const actualHelpfulState = response.data.is_helpful;
-        
-        if (button.classList.contains('active') !== actualHelpfulState) {
-            // If UI state doesn't match server state, update it
-            button.classList.toggle('active');
-            
-            // Update icon to match server state
-            if (actualHelpfulState) {
-                icon.classList.remove('far');
-                icon.classList.add('fas');
+
+    if (confirm("هل أنت متأكد من الإبلاغ عن هذه المراجعة؟")) {
+        try {
+            const response = await axios.post(
+                "/api/admin/reports/",
+                { review: reviewId },
+                {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": getCookie("csrftoken"),
+                    },
+                }
+            );
+
+            logInteractionState(reviewId, "Report", { success: true }, response.data);
+
+            // تحديث حالة الزر بعد الإبلاغ
+            button.classList.add("active");
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-flag"></i> تم الإبلاغ';
+
+            showAuthAlert("تم الإبلاغ عن المراجعة بنجاح", "success");
+        } catch (error) {
+            console.error("Error reporting review:", error);
+
+            if (error.response && error.response.data && error.response.data.error) {
+                showAuthAlert(error.response.data.error, "danger");
             } else {
-                icon.classList.remove('fas');
-                icon.classList.add('far');
+                showAuthAlert("حدث خطأ أثناء الإبلاغ عن المراجعة", "danger");
             }
+
+            logInteractionState(reviewId, "Report", { error: true, errorMessage: error.message });
         }
-        
-        logInteractionState(reviewId, 'Helpful', { success: true, serverState: actualHelpfulState }, response.data);
-        
-    } catch (error) {
-        console.error('Error handling helpful interaction:', error);
-        
-        // Restore original state on error
-        button.classList.toggle('active');
-        
-        // Restore icon
-        const icon = button.querySelector('i');
-        if (button.classList.contains('active')) {
-            icon.classList.remove('far');
-            icon.classList.add('fas');
-        } else {
-            icon.classList.remove('fas');
-            icon.classList.add('far');
-        }
-        
-        logInteractionState(reviewId, 'Helpful', { error: true, errorMessage: error.message });
-        showAuthAlert('حدث خطأ أثناء تسجيل التفاعل', 'danger');
     }
 };
 
-// Handle report interaction
-const handleReportInteraction = async (reviewId, button) => {
-    if (!Auth.isLoggedIn()) {
-        showAuthAlert('يجب تسجيل الدخول للإبلاغ عن المراجعات', 'warning');
-        return;
+
+
+// تفعيل حدث الضغط على زر الإبلاغ في الصفحة
+document.addEventListener("click", function (event) {
+    const button = event.target.closest(".report-button");
+    if (button) {
+        const reviewCard = button.closest(".review-card");
+        const reviewId = reviewCard.getAttribute("data-review-id");
+        handleReportInteraction(reviewId, button);
     }
-    
-    if (confirm('هل أنت متأكد من الإبلاغ عن هذه المراجعة؟')) {
-        try {
-            const response = await axios.post('/api/admin/reports/', {
-                review: reviewId
-            });
-            
-            logInteractionState(reviewId, 'Report', { success: true }, response.data);
-            
-            // Update button state
-            button.classList.add('active');
-            button.disabled = true;
-            button.innerHTML = '<i class="fas fa-flag"></i> تم الإبلاغ';
-            
-            showAuthAlert('تم الإبلاغ عن المراجعة بنجاح', 'success');
-            
-        } catch (error) {
-            console.error('Error reporting review:', error);
-            
-            // Show specific error message if available
-            if (error.response && error.response.data && error.response.data.error) {
-                showAuthAlert(error.response.data.error, 'danger');
-            } else {
-                showAuthAlert('حدث خطأ أثناء الإبلاغ عن المراجعة', 'danger');
-            }
-            
-            logInteractionState(reviewId, 'Report', { error: true, errorMessage: error.message });
-        }
-    }
-};
+});
+
+
+
+
+
+
+
 
 // Handle submitting a new review
 const handleSubmitReview = async () => {
@@ -434,7 +445,6 @@ const handleSubmitReview = async () => {
         showAuthAlert('حدث خطأ أثناء إرسال المراجعة', 'danger');
     }
 };
-
 // Handle logout
 const handleLogout = async () => {
     try {
@@ -514,3 +524,47 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 }); 
+
+
+document.addEventListener("click", function (e) {
+    if (e.target && e.target.matches(".btn-primary.auth-login-required")) {
+        const reviewCard = e.target.closest(".review-card");
+        const reviewId = reviewCard.dataset.reviewId;  // لازم نكون ضايفين data-review-id
+        const commentBox = reviewCard.querySelector(".comment-input");
+        const commentText = commentBox.value.trim();
+
+        if (!commentText) {
+            alert("الرجاء كتابة تعليق قبل الإرسال.");
+            return;
+        }
+
+        fetch(`/reviews/${reviewId}/comment/`, {
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCookie('csrftoken'),
+                "Authorization": "Bearer " + localStorage.getItem("product_review_access_token")
+            },
+            body: JSON.stringify({
+                comment_text: commentText
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("فشل في إرسال التعليق");
+            }
+            return response.json();
+        })
+        .then(data => {
+            const commentItem = document.createElement("li");
+            commentItem.className = "list-group-item";
+            commentItem.textContent = `${data.user}: ${data.comment_text}`;
+            reviewCard.querySelector(".comments-list").appendChild(commentItem);
+            commentBox.value = "";
+        })
+        .catch(error => {
+            alert("حدث خطأ أثناء إرسال التعليق.");
+            console.error(error);
+        });
+    }
+});
