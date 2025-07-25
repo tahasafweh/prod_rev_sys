@@ -243,9 +243,28 @@
               <i class="far fa-flag"></i> إبلاغ
             </button>
           </div>
+
+
+          
+
           <div class="views-counter">
             <i class="far fa-eye"></i> <span class="views-count">0</span> مشاهدة
           </div>
+<script>
+    // جلب رقم المراجعة من رابط الصفحة
+    const pathParts = window.location.pathname.split('/');
+    const reviewId = pathParts[pathParts.length - 2];  // لأنه الرابط هو /reviews/12/
+    const productId = pathParts[pathParts.length - 4]; // لأنه /products/5/reviews/12/
+
+    // نداء الدالة لجلب المراجعة من الباك
+    loadSingleReview(productId, reviewId);
+</script>
+
+
+
+
+
+
         </div>
       </div>
     </div>

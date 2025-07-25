@@ -92,6 +92,30 @@ const loadProductRatings = async (productId) => {
     }
 };
 
+
+
+
+
+
+
+
+
+const incrementReviewView = async (reviewId) => {
+  try {
+    await axios.get(`/api/reviews/${reviewId}/`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('product_review_access_token')}`
+      }
+    });
+    // لا تحتاج إلى التعامل مع الرد لأنه يتم التحديث تلقائي في الباك
+  } catch (error) {
+    console.error(`فشل تحديث عداد المشاهدات للمراجعة ${reviewId}`, error);
+  }
+};
+
+
+
+
 // Load reviews for the product
 const loadReviews = async (productId, filters = {}) => {
     const loadingIndicator = document.getElementById('loading-indicator');
@@ -136,6 +160,7 @@ const loadReviews = async (productId, filters = {}) => {
         reviews.forEach(review => {
             const reviewElement = createReviewElement(review);
             reviewsList.appendChild(reviewElement);
+            incrementReviewView(review.id);
         });
         
     } catch (error) {
@@ -144,6 +169,53 @@ const loadReviews = async (productId, filters = {}) => {
         showAuthAlert('حدث خطأ أثناء تحميل المراجعات', 'danger');
     }
 };
+
+
+const loadSingleReview = async (reviewId) => {
+    try {
+        const response = await axios.get(`/api/reviews/${reviewId}/`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('product_review_access_token')}`
+            }
+        });
+        const review = response.data;
+
+        // تحديث عداد المشاهدات بالصفحة
+        document.querySelector('.views-count').textContent = review.views_count || 0;
+        document.querySelector('.likes-count').textContent = review.likes_count || 0;
+
+        // إذا بدك تعرضي نص المراجعة، التقييم، التعليقات، الخ...
+        // document.querySelector('.review-text').textContent = review.review_text;
+
+    } catch (error) {
+        console.error('خطأ أثناء جلب تفاصيل المراجعة:', error);
+    }
+};
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    const pathParts = window.location.pathname.split('/');
+    
+    // تأكدي إنك في مسار: /products/<id>/reviews/<id>/
+    const productIndex = pathParts.indexOf('products');
+    const reviewIndex = pathParts.indexOf('reviews');
+
+    if (productIndex !== -1 && reviewIndex !== -1) {
+        const productId = pathParts[productIndex + 1];
+        const reviewId = pathParts[reviewIndex + 1];
+        loadSingleReview(productId, reviewId);
+    }
+});
+
+
+
+
+
+
+
+
+
+
 
 // Create a review element from template
 const createReviewElement = (review) => {
